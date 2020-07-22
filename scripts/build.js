@@ -8,6 +8,7 @@ if (!fs.existsSync('dist')) {
   fs.mkdirSync('dist')
 }
 
+// builds 怎么生成，需要看一下 getAllBuilds 方法
 let builds = require('./config').getAllBuilds()
 
 // filter builds via command line arg
@@ -28,6 +29,7 @@ build(builds)
 function build (builds) {
   let built = 0
   const total = builds.length
+  // 递归的调用下一个文件，并写入
   const next = () => {
     buildEntry(builds[built]).then(() => {
       built++
@@ -40,6 +42,10 @@ function build (builds) {
   next()
 }
 
+/**
+ * 打包入口
+ * @param {*} config 猜测是 webpack 的 config
+ */
 function buildEntry (config) {
   const output = config.output
   const { file, banner } = output
@@ -47,6 +53,7 @@ function buildEntry (config) {
   return rollup.rollup(config)
     .then(bundle => bundle.generate(output))
     .then(({ output: [{ code }] }) => {
+      // 生产环境就写入压缩后的代码
       if (isProd) {
         const minified = (banner ? banner + '\n' : '') + terser.minify(code, {
           toplevel: true,
@@ -59,14 +66,22 @@ function buildEntry (config) {
         }).code
         return write(file, minified, true)
       } else {
+        // 非生产环境，直接写入代码至文件
         return write(file, code)
       }
     })
 }
 
+/**
+ * 写入打包后的代码
+ * @param {*} dest 路径
+ * @param {*} code 源码
+ * @param {*} zip 开启 gzip 压缩
+ */
 function write (dest, code, zip) {
   return new Promise((resolve, reject) => {
     function report (extra) {
+      // 在控制台上输出当前文件的信息
       console.log(blue(path.relative(process.cwd(), dest)) + ' ' + getSize(code) + (extra || ''))
       resolve()
     }
@@ -85,6 +100,10 @@ function write (dest, code, zip) {
   })
 }
 
+/**
+ * 获取文件大小
+ * @param {*} code
+ */
 function getSize (code) {
   return (code.length / 1024).toFixed(2) + 'kb'
 }
