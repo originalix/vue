@@ -12,11 +12,17 @@ export const createCompiler = createCompilerCreator(function baseCompile (
   template: string,
   options: CompilerOptions
 ): CompiledResult {
+  // TODO: 生成 ast 树
   const ast = parse(template.trim(), options)
+
+  // TODO: optimize 逻辑未看
   if (options.optimize !== false) {
     optimize(ast, options)
   }
+  // TODO: generate 逻辑未看
   const code = generate(ast, options)
+
+  // baseCompile 函数，返回以下对象
   return {
     ast,
     render: code.render,
